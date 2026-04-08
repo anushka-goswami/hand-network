@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Hand Tracker</title>
+  <title>Sci-Fi Hand Control</title>
 
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      background: #0f0f0f;
+      background: black;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -21,19 +21,38 @@
       height: 480px;
     }
 
-    #video {
+    video, canvas {
+      position: absolute;
       width: 640px;
       height: 480px;
+      top: 0;
+      left: 0;
       transform: scaleX(-1);
     }
 
-    #canvas {
+    #threeCanvas {
+      pointer-events: none;
+    }
+
+    #colors {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 640px;
-      height: 480px;
-      transform: scaleX(-1);
+      top: 10px;
+      left: 10px;
+      z-index: 10;
+    }
+
+    #colors button {
+      margin: 2px;
+      padding: 5px;
+      cursor: pointer;
+    }
+
+    #saveBtn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 10;
+      padding: 6px;
     }
   </style>
 </head>
@@ -41,15 +60,29 @@
 <body>
 
 <div id="container">
+
+  <!-- 🎨 COLORS -->
+  <div id="colors">
+    <button onclick="setColor('red')">🔴</button>
+    <button onclick="setColor('blue')">🔵</button>
+    <button onclick="setColor('green')">🟢</button>
+  </div>
+
+  <button id="saveBtn" onclick="saveImage()">Save</button>
+
   <video id="video" autoplay playsinline></video>
   <canvas id="canvas" width="640" height="480"></canvas>
+  <canvas id="threeCanvas"></canvas>
+
 </div>
 
 <!-- MediaPipe -->
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
 
-<!-- ONLY ONE SCRIPT -->
+<!-- 3D -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
 <script src="app.js"></script>
 
 </body>

@@ -2,81 +2,98 @@ const video  = document.getElementById('video');
 const canvas = document.getElementById('canvas');
 const ctx    = canvas.getContext('2d');
 
-// Create model
+let strokes = [];
+let drawColor = "#00ffff"; // default neon blue
+
+// MediaPipe
 const hands = new Hands({
   locateFile: (file) =>
     `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
 });
 
-// ✅ Proper settings (improved accuracy)
 hands.setOptions({
-  maxNumHands: 2,
+  maxNumHands: 1,
   modelComplexity: 1,
-  minDetectionConfidence: 0.85,
-  minTrackingConfidence: 0.85
+  minDetectionConfidence: 0.8,
+  minTrackingConfidence: 0.8
 });
 
-// Process frames
+// 🤏 pinch detection (stable)
+function isPinching(hand) {
+  const dx = hand[4].x - hand[8].x;
+  const dy = hand[4].y - hand[8].y;
+  return Math.sqrt(dx*dx + dy*dy) < 0.04;
+}
+
+// ✊ fist = clear
+function isFist(hand) {
+  return (
+    hand[8].y > hand[6].y &&
+    hand[12].y > hand[10].y &&
+    hand[16].y > hand[14].y &&
+    hand[20].y > hand[18].y
+  );
+}
+
 hands.onResults((results) => {
 
-  // ✅ Draw camera video first
+  // camera
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
 
-  // safety check
-  if (!results.multiHandLandmarks || results.multiHandLandmarks.length < 2) {
+  if (!results.multiHandLandmarks?.length) return;
+
+  const hand = results.multiHandLandmarks[0];
+
+  const x = hand[8].x * canvas.width;
+  const y = hand[8].y * canvas.height;
+
+  // clear
+  if (isFist(hand)) {
+    strokes = [];
     return;
   }
 
-  const tips = [4, 8, 12, 16, 20];
-
-  let leftHand = null;
-  let rightHand = null;
-
-  // detect left & right hand
-  for (let i = 0; i < results.multiHandLandmarks.length; i++) {
-    const label = results.multiHandedness[i].label;
-
-    if (label === "Left") leftHand = results.multiHandLandmarks[i];
-    else rightHand = results.multiHandLandmarks[i];
+  // draw
+  if (isPinching(hand)) {
+    strokes.push({ x, y, color: drawColor });
   }
 
-  if (leftHand && rightHand) {
+  // ✨ SMOOTH DRAWING (rounded + glow)
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
 
-    for (let i = 0; i < tips.length; i++) {
+  for (let i = 1; i < strokes.length; i++) {
+    const p1 = strokes[i - 1];
+    const p2 = strokes[i];
 
-      const idx = tips[i];
+    // glow
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.strokeStyle = p2.color;
+    ctx.lineWidth = 10;
+    ctx.globalAlpha = 0.2;
+    ctx.stroke();
 
-      const x1 = leftHand[idx].x * canvas.width;
-      const y1 = leftHand[idx].y * canvas.height;
-
-      const x2 = rightHand[idx].x * canvas.width;
-      const y2 = rightHand[idx].y * canvas.height;
-
-      // 🔥 draw points (more visible)
-      ctx.beginPath();
-      ctx.arc(x1, y1, 8, 0, 2 * Math.PI);
-      ctx.fillStyle = "yellow";
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.arc(x2, y2, 8, 0, 2 * Math.PI);
-      ctx.fillStyle = "yellow";
-      ctx.fill();
-
-      // 🔥 draw line
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-
-      ctx.strokeStyle = "cyan";
-      ctx.lineWidth = 4;
-      ctx.stroke();
-    }
+    // main line
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.strokeStyle = p2.color;
+    ctx.lineWidth = 4;
+    ctx.globalAlpha = 1;
+    ctx.stroke();
   }
+
+  // pointer
+  ctx.beginPath();
+  ctx.arc(x, y, 5, 0, 2*Math.PI);
+  ctx.fillStyle = "white";
+  ctx.fill();
 });
 
-// Camera
+// camera
 const camera = new Camera(video, {
   onFrame: async () => {
     await hands.send({ image: video });
@@ -84,5 +101,17 @@ const camera = new Camera(video, {
   width: 640,
   height: 480
 });
-
 camera.start();
+
+// 🎨 color
+function setColor(color) {
+  drawColor = color;
+}
+
+// 💾 save
+function saveImage() {
+  const link = document.createElement('a');
+  link.download = 'drawing.png';
+  link.href = canvas.toDataURL();
+  link.click();
+}
