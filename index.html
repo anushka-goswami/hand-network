@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Hand Tracker</title>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0f0f0f;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    #container {
+      position: relative;
+      width: 640px;
+      height: 480px;
+    }
+
+    #video {
+      width: 640px;
+      height: 480px;
+      transform: scaleX(-1);
+    }
+
+    #canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 640px;
+      height: 480px;
+      transform: scaleX(-1);
+    }
+  </style>
+</head>
+
+<body>
+
+<div id="container">
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas" width="640" height="480"></canvas>
+</div>
+
+<!-- MediaPipe -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+
+<!-- ONLY ONE SCRIPT -->
+<script src="app.js"></script>
+
+</body>
+</html>
