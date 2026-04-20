@@ -1,163 +1,200 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Sci-Fi Hand Control</title>
+  <meta charset="UTF-8">
+  <title>Sci-Fi Hand Control</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: 'Orbitron', 'Courier New', monospace;
+    }
 
-body {
-  background: radial-gradient(circle, #020617, #000);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  font-family: "Segoe UI", sans-serif;
-}
+    #title-bar {
+      text-align: center;
+      margin-bottom: 10px;
+      letter-spacing: 0.25em;
+      font-size: 11px;
+      text-transform: uppercase;
+      color: rgba(0,212,255,0.55);
+    }
+    #title-bar strong {
+      color: rgba(0,212,255,0.95);
+      font-size: 15px;
+      display: block;
+      margin-bottom: 3px;
+    }
 
-/* 📦 Container */
-#container {
-  position: relative;
-  width: 700px;
-  height: 520px;
-  border-radius: 15px;
-  overflow: hidden;
-  box-shadow: 0 0 30px rgba(0,255,255,0.2);
-}
+    #wrapper {
+      padding: 3px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #00d4ff44, #7c3aed44, #00d4ff22);
+      box-shadow:
+        0 0 50px rgba(0,212,255,0.2),
+        0 0 100px rgba(0,212,255,0.08);
+    }
 
-/* 🎥 Video + Canvas */
-video, canvas {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  transform: scaleX(-1);
-}
+    #container {
+      position: relative;
+      width: 640px;
+      height: 480px;
+      border-radius: 4px;
+      overflow: hidden;
+      background: #000;
+    }
 
-/* 🧠 Instruction Box */
-#instruction {
-  position: absolute;
-  bottom: 15px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: cyan;
-  font-size: 16px;
-  padding: 8px 18px;
-  border-radius: 10px;
-  border: 1px solid cyan;
-  background: rgba(0,0,0,0.5);
-  backdrop-filter: blur(6px);
-  z-index: 10;
-  animation: glow 1.5s infinite alternate;
-}
+    video, canvas {
+      position: absolute;
+      width: 640px;
+      height: 480px;
+      top: 0; left: 0;
+      transform: scaleX(-1);
+    }
 
-/* ✨ Glow Animation */
-@keyframes glow {
-  from { box-shadow: 0 0 5px cyan; }
-  to { box-shadow: 0 0 15px cyan; }
-}
+    #threeCanvas { pointer-events: none; }
 
-/* 🎨 Controls Panel */
-#panel {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  display: flex;
-  gap: 8px;
-  padding: 10px;
-  border-radius: 12px;
-  background: rgba(0,0,0,0.5);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(0,255,255,0.3);
-  z-index: 10;
-}
+    /* scanlines */
+    #container::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent, transparent 3px,
+        rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px
+      );
+    }
 
-/* 🎯 Buttons */
-button {
-  padding: 6px 10px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  transition: 0.3s;
-}
+    /* HUD corners */
+    .hud-corners { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
+    .hud-corners span { position: absolute; width: 20px; height: 20px; border-color: rgba(0,212,255,0.75); border-style: solid; }
+    .hud-corners span:nth-child(1) { top:8px;   left:8px;  border-width:2px 0 0 2px; }
+    .hud-corners span:nth-child(2) { top:8px;   right:8px; border-width:2px 2px 0 0; }
+    .hud-corners span:nth-child(3) { bottom:8px;left:8px;  border-width:0 0 2px 2px; }
+    .hud-corners span:nth-child(4) { bottom:8px;right:8px; border-width:0 2px 2px 0; }
 
-button:hover {
-  transform: scale(1.1);
-  box-shadow: 0 0 10px cyan;
-}
+    /* status top-center */
+    #status-bar {
+      position: absolute; top:12px; left:50%; transform:translateX(-50%);
+      z-index:10; display:flex; align-items:center; gap:7px;
+      background:rgba(0,0,0,0.62); border:1px solid rgba(0,212,255,0.22);
+      border-radius:20px; padding:5px 14px; pointer-events:none;
+    }
+    .s-dot { width:6px;height:6px;border-radius:50%;background:#00ffaa;animation:blink 1.6s ease-in-out infinite; }
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:0.15}}
+    .s-label { font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:rgba(0,212,255,0.8); }
 
-/* 💾 Save button */
-#saveBtn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: linear-gradient(45deg, #00f2fe, #4facfe);
-  color: white;
-  border-radius: 8px;
-  padding: 8px 12px;
-  z-index: 10;
-}
+    /* color palette — left side */
+    #colors {
+      position:absolute; top:50%; left:12px; transform:translateY(-50%);
+      z-index:10; display:flex; flex-direction:column; gap:8px;
+    }
+    #colors button {
+      width:30px;height:30px;border-radius:50%;
+      border:2px solid rgba(255,255,255,0.15);
+      cursor:pointer; outline:none;
+      transition:transform 0.15s,border-color 0.2s,box-shadow 0.2s;
+    }
+    #colors button:hover { transform:scale(1.22); border-color:rgba(255,255,255,0.7); }
+    #colors button:nth-child(1){background:#ef4444;}
+    #colors button:nth-child(2){background:#3b82f6;}
+    #colors button:nth-child(3){background:#22c55e;}
 
-/* 🟢 Color buttons */
-.red { background: red; }
-.blue { background: blue; }
-.green { background: green; }
+    /* save */
+    #saveBtn {
+      position:absolute; top:12px; right:12px; z-index:10;
+      padding:6px 14px;
+      background:rgba(0,0,0,0.6); border:1px solid rgba(0,212,255,0.45);
+      border-radius:4px; color:rgba(0,212,255,0.9);
+      font-family:'Orbitron',monospace; font-size:9px;
+      letter-spacing:0.15em; text-transform:uppercase; cursor:pointer;
+      transition:background 0.2s,border-color 0.2s,box-shadow 0.2s;
+    }
+    #saveBtn:hover {
+      background:rgba(0,212,255,0.1);
+      border-color:rgba(0,212,255,0.9);
+      box-shadow:0 0 14px rgba(0,212,255,0.3);
+    }
 
-/* 🔷 Header */
-#title {
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: cyan;
-  font-size: 18px;
-  font-weight: bold;
-  text-shadow: 0 0 10px cyan;
-  z-index: 10;
-}
-</style>
+    /* gesture bar — bottom */
+    #gesture-bar {
+      position:absolute; bottom:14px; left:50%; transform:translateX(-50%);
+      z-index:10; display:flex; gap:10px; pointer-events:none;
+    }
+    .g-chip {
+      display:flex; align-items:center; gap:6px;
+      background:rgba(0,0,0,0.68); border:1px solid rgba(0,212,255,0.22);
+      border-radius:20px; padding:6px 14px; white-space:nowrap;
+    }
+    .g-emoji  { font-size:13px; line-height:1; font-family:sans-serif; }
+    .g-text   { font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.45); }
+    .g-sep    { font-size:9px; color:rgba(255,255,255,0.2); }
+    .g-action { font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(0,212,255,0.9); font-weight:700; }
+  </style>
 </head>
-
 <body>
 
-<div id="container">
-
-  <!-- 🔷 TITLE -->
-  <div id="title">🤖 AI Hand Gesture Drawing</div>
-
-  <!-- 🎨 PANEL -->
-  <div id="panel">
-    <button class="red" onclick="setColor('red')"></button>
-    <button class="blue" onclick="setColor('blue')"></button>
-    <button class="green" onclick="setColor('green')"></button>
+  <div id="title-bar">
+    <strong>Gesture Draw</strong>
+    Sci-Fi Hand Control Interface
   </div>
 
-  <!-- 💾 SAVE -->
-  <button id="saveBtn" onclick="saveImage()">💾 Save</button>
+  <div id="wrapper">
+    <div id="container">
 
-  <!-- 🎯 INSTRUCTION -->
-  <div id="instruction">
-    ✋ Pinch to Draw | ✊ Fist to Clear
+      <div class="hud-corners">
+        <span></span><span></span><span></span><span></span>
+      </div>
+
+      <div id="status-bar">
+        <div class="s-dot"></div>
+        <span class="s-label">System Ready</span>
+      </div>
+
+      <div id="colors">
+        <button onclick="setColor('red')"   title="Red"></button>
+        <button onclick="setColor('blue')"  title="Blue"></button>
+        <button onclick="setColor('green')" title="Green"></button>
+      </div>
+
+      <button id="saveBtn" onclick="saveImage()">&#8675; Save</button>
+
+      <video id="video" autoplay playsinline></video>
+      <canvas id="canvas" width="640" height="480"></canvas>
+      <canvas id="threeCanvas"></canvas>
+
+      <div id="gesture-bar">
+        <div class="g-chip">
+          <span class="g-emoji">✌️</span>
+          <span class="g-text">Pinch</span>
+          <span class="g-sep">→</span>
+          <span class="g-action">Start Draw</span>
+        </div>
+        <div class="g-chip">
+          <span class="g-emoji">✊</span>
+          <span class="g-text">Fist</span>
+          <span class="g-sep">→</span>
+          <span class="g-action">Clear</span>
+        </div>
+      </div>
+
+    </div>
   </div>
-
-  <!-- 🎥 STREAM -->
-  <video id="video" autoplay playsinline></video>
-  <canvas id="canvas" width="640" height="480"></canvas>
-  <canvas id="threeCanvas"></canvas>
-
-</div>
 
 <!-- MediaPipe -->
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-
-<!-- 3D -->
+<!-- Three.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
 <script src="app.js"></script>
-
 </body>
 </html>
