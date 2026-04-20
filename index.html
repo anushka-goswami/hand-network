@@ -1,75 +1,149 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Sci-Fi Hand Control</title>
+<meta charset="UTF-8">
+<title>Sci-Fi Hand Control</title>
 
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-    body {
-      background: black;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
+body {
+  background: radial-gradient(circle, #020617, #000);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-family: "Segoe UI", sans-serif;
+}
 
-    #container {
-      position: relative;
-      width: 640px;
-      height: 480px;
-    }
+/* 📦 Container */
+#container {
+  position: relative;
+  width: 700px;
+  height: 520px;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 0 30px rgba(0,255,255,0.2);
+}
 
-    video, canvas {
-      position: absolute;
-      width: 640px;
-      height: 480px;
-      top: 0;
-      left: 0;
-      transform: scaleX(-1);
-    }
+/* 🎥 Video + Canvas */
+video, canvas {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  transform: scaleX(-1);
+}
 
-    #threeCanvas {
-      pointer-events: none;
-    }
+/* 🧠 Instruction Box */
+#instruction {
+  position: absolute;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: cyan;
+  font-size: 16px;
+  padding: 8px 18px;
+  border-radius: 10px;
+  border: 1px solid cyan;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(6px);
+  z-index: 10;
+  animation: glow 1.5s infinite alternate;
+}
 
-    #colors {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 10;
-    }
+/* ✨ Glow Animation */
+@keyframes glow {
+  from { box-shadow: 0 0 5px cyan; }
+  to { box-shadow: 0 0 15px cyan; }
+}
 
-    #colors button {
-      margin: 2px;
-      padding: 5px;
-      cursor: pointer;
-    }
+/* 🎨 Controls Panel */
+#panel {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(0,255,255,0.3);
+  z-index: 10;
+}
 
-    #saveBtn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      z-index: 10;
-      padding: 6px;
-    }
-  </style>
+/* 🎯 Buttons */
+button {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  transition: 0.3s;
+}
+
+button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 10px cyan;
+}
+
+/* 💾 Save button */
+#saveBtn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: linear-gradient(45deg, #00f2fe, #4facfe);
+  color: white;
+  border-radius: 8px;
+  padding: 8px 12px;
+  z-index: 10;
+}
+
+/* 🟢 Color buttons */
+.red { background: red; }
+.blue { background: blue; }
+.green { background: green; }
+
+/* 🔷 Header */
+#title {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: cyan;
+  font-size: 18px;
+  font-weight: bold;
+  text-shadow: 0 0 10px cyan;
+  z-index: 10;
+}
+</style>
 </head>
 
 <body>
 
 <div id="container">
 
-  <!-- 🎨 COLORS -->
-  <div id="colors">
-    <button onclick="setColor('red')">🔴</button>
-    <button onclick="setColor('blue')">🔵</button>
-    <button onclick="setColor('green')">🟢</button>
+  <!-- 🔷 TITLE -->
+  <div id="title">🤖 AI Hand Gesture Drawing</div>
+
+  <!-- 🎨 PANEL -->
+  <div id="panel">
+    <button class="red" onclick="setColor('red')"></button>
+    <button class="blue" onclick="setColor('blue')"></button>
+    <button class="green" onclick="setColor('green')"></button>
   </div>
 
-  <button id="saveBtn" onclick="saveImage()">Save</button>
+  <!-- 💾 SAVE -->
+  <button id="saveBtn" onclick="saveImage()">💾 Save</button>
 
+  <!-- 🎯 INSTRUCTION -->
+  <div id="instruction">
+    ✋ Pinch to Draw | ✊ Fist to Clear
+  </div>
+
+  <!-- 🎥 STREAM -->
   <video id="video" autoplay playsinline></video>
   <canvas id="canvas" width="640" height="480"></canvas>
   <canvas id="threeCanvas"></canvas>
