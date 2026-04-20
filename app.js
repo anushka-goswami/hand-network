@@ -1,99 +1,80 @@
+// app.js — Hand Tracking Network (FINAL)
+
 const video  = document.getElementById('video');
 const canvas = document.getElementById('canvas');
 const ctx    = canvas.getContext('2d');
 
-let strokes = [];
-let drawColor = "#00ffff"; // default neon blue
-
-// MediaPipe
+// 1. Create the Hands model
 const hands = new Hands({
-  locateFile: (file) =>
-    `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+  locateFile: (file) => {
+    return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+  }
 });
 
+// 2. Configure detection options
 hands.setOptions({
-  maxNumHands: 1,
+  maxNumHands: 2,
   modelComplexity: 1,
-  minDetectionConfidence: 0.8,
-  minTrackingConfidence: 0.8
+  minDetectionConfidence: 0.7,
+  minTrackingConfidence: 0.5
 });
 
-// 🤏 pinch detection (stable)
-function isPinching(hand) {
-  const dx = hand[4].x - hand[8].x;
-  const dy = hand[4].y - hand[8].y;
-  return Math.sqrt(dx*dx + dy*dy) < 0.04;
-}
-
-// ✊ fist = clear
-function isFist(hand) {
-  return (
-    hand[8].y > hand[6].y &&
-    hand[12].y > hand[10].y &&
-    hand[16].y > hand[14].y &&
-    hand[20].y > hand[18].y
-  );
-}
-
+// 3. Process each frame
 hands.onResults((results) => {
 
-  // camera
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+  // 🔥 Trail effect (smooth fade)
+  ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  if (!results.multiHandLandmarks?.length) return;
+  if (results.multiHandLandmarks.length > 0) {
 
-  const hand = results.multiHandLandmarks[0];
+    const tips = [4, 8, 12, 16, 20];
+    let allPoints = [];
 
-  const x = hand[8].x * canvas.width;
-  const y = hand[8].y * canvas.height;
+    // ✅ Collect fingertips from ALL hands
+    for (const landmarks of results.multiHandLandmarks) {
+      for (let i of tips) {
+        allPoints.push({
+          x: landmarks[i].x * canvas.width,
+          y: landmarks[i].y * canvas.height
+        });
+      }
+    }
 
-  // clear
-  if (isFist(hand)) {
-    strokes = [];
-    return;
+    // ✅ Draw glowing points (fingertips)
+    for (let p of allPoints) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 6, 0, 2 * Math.PI);
+      ctx.fillStyle = "cyan";
+      ctx.fill();
+    }
+
+    // ✅ Connect ALL points (cross-hand network)
+    for (let i = 0; i < allPoints.length; i++) {
+      for (let j = i + 1; j < allPoints.length; j++) {
+
+        const dx = allPoints[i].x - allPoints[j].x;
+        const dy = allPoints[i].y - allPoints[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        // 🔥 only connect if close (adjust 200 → more/less lines)
+        if (dist < 200) {
+
+          ctx.beginPath();
+          ctx.moveTo(allPoints[i].x, allPoints[i].y);
+          ctx.lineTo(allPoints[j].x, allPoints[j].y);
+
+          // distance-based glow
+          ctx.strokeStyle = `rgba(0,255,255,${1 - dist/200})`;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+      }
+    }
   }
-
-  // draw
-  if (isPinching(hand)) {
-    strokes.push({ x, y, color: drawColor });
-  }
-
-  // ✨ SMOOTH DRAWING (rounded + glow)
-  ctx.lineJoin = "round";
-  ctx.lineCap = "round";
-
-  for (let i = 1; i < strokes.length; i++) {
-    const p1 = strokes[i - 1];
-    const p2 = strokes[i];
-
-    // glow
-    ctx.beginPath();
-    ctx.moveTo(p1.x, p1.y);
-    ctx.lineTo(p2.x, p2.y);
-    ctx.strokeStyle = p2.color;
-    ctx.lineWidth = 10;
-    ctx.globalAlpha = 0.2;
-    ctx.stroke();
-
-    // main line
-    ctx.beginPath();
-    ctx.moveTo(p1.x, p1.y);
-    ctx.lineTo(p2.x, p2.y);
-    ctx.strokeStyle = p2.color;
-    ctx.lineWidth = 4;
-    ctx.globalAlpha = 1;
-    ctx.stroke();
-  }
-
-  // pointer
-  ctx.beginPath();
-  ctx.arc(x, y, 5, 0, 2*Math.PI);
-  ctx.fillStyle = "white";
-  ctx.fill();
 });
 
-// camera
+// 4. Camera setup
 const camera = new Camera(video, {
   onFrame: async () => {
     await hands.send({ image: video });
@@ -101,17 +82,5 @@ const camera = new Camera(video, {
   width: 640,
   height: 480
 });
+
 camera.start();
-
-// 🎨 color
-function setColor(color) {
-  drawColor = color;
-}
-
-// 💾 save
-function saveImage() {
-  const link = document.createElement('a');
-  link.download = 'drawing.png';
-  link.href = canvas.toDataURL();
-  link.click();
-}
